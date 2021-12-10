@@ -13,25 +13,25 @@ const transactions = [
   {
     id: 1,
     description: 'Luz',
-    amount: -500.25,
+    amount: -50025,
     date: '23/01/2021',
   },
   {
     id: 2,
     description: 'Website',
-    amount: 5000,
+    amount: 500000,
     date: '23/01/2021',
   },
   {
     id: 3,
     description: 'Internet',
-    amount: -200,
+    amount: -20000,
     date: '23/01/2021',
   },
   {
     id: 4,
     description: 'Salvo',
-    amount: 1000,
+    amount: 100000,
     date: '23/01/2021',
   },
 ]
@@ -41,6 +41,11 @@ const Transaction = {
 
   add(transaction) {
     Transaction.all.push(transaction);
+    App.reload();
+  },
+
+  remove(index) {
+    Transaction.all.splice(index, 1);
     App.reload();
   },
 
@@ -68,8 +73,8 @@ const Transaction = {
 
     return Transaction.incomes() + Transaction.expenses();
   }
-}
 
+}
 
 const DOM = {
   transactionsContainer: document.querySelector('#data-table tbody'),
@@ -108,16 +113,87 @@ const DOM = {
 
 const Utils = {
   formatCurrency(value) {
-    //const signal = Number(value) < 0 ? "-" : "";
-    //value = value * 100;
-    //Math.round(value);
+    const signal = Number(value) < 0 ? "-" : ""
+
+    value = String(value).replace(/\D/g, "")
+
+    value = Number(value) / 100
 
     value = value.toLocaleString("pt-BR", {
       style: "currency",
       currency: "BRL"
     })
 
-    return value;
+    return signal + value;
+  },
+
+  formatAmount(value) {
+    value = value * 100;
+    //value = Number(value.replace(/\,?\.?/g, "")) * 100;
+    return Math.round(value);
+  },
+
+  formatDate(date) {
+    const splitedDate = date.split("-");
+    return `${splitedDate[2]}/${splitedDate[1]}/${splitedDate[0]}`;
+  }
+}
+
+const Form = {
+  description: document.querySelector('input#description'),
+  amount: document.querySelector('input#amount'),
+  date: document.querySelector('input#date'),
+
+  getValues() {
+    return {
+      description: Form.description.value,
+      amount: Form.amount.value,
+      date: Form.date.value,
+    }
+  },
+
+  formatValues() {
+    let { description, amount, date } = Form.getValues();
+    amount = Utils.formatAmount(amount);
+    date = Utils.formatDate(date);
+
+    return {
+      description,
+      amount,
+      date
+    }
+  },
+
+  validateFields() {
+    const { description, amount, date } = Form.getValues();
+
+    if (description.trim() === "" || amount.trim() === "" || date.trim() === "") {
+      throw new Error("Pro favor, preencha todos os campos!");
+    }
+  },
+
+  clearFields() {
+    Form.description.value = "";
+    Form.amount.value = "";
+    Form.date.value = "";
+  },
+
+  submit(event) {
+    event.preventDefault();
+
+    try {
+      Form.validateFields();
+      const transaction = Form.formatValues();
+      //console.log(transaction);
+      Transaction.add(transaction);
+
+      Form.clearFields();
+      Modal.close();
+
+    } catch (error) {
+      alert(error.message);
+    }
+
   }
 }
 
@@ -131,7 +207,7 @@ const App = {
   },
 
   reload() {
-    Transaction.clearTransactions();
+    DOM.clearTransactions();
     App.init();
   }
 }
